@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload and Extract Zip</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+  }
+  h1, h2 {
+    color: #333;
+  }
+  #fileList {
+    list-style: none;
+    padding: 0;
+  }
+  #fileList li {
+    padding: 5px;
+    background: #f4f4f4;
+    margin-bottom: 5px;
+  }
+  button {
+    padding: 10px 15px;
+    font-size: 16px;
+  }
+  #error {
+    color: red;
+  }
+</style>
+</head>
+<body>
+<h1>Upload and Extract Zip File</h1>
+<form id="uploadForm" enctype="multipart/form-data">
+  <input type="file" id="zipfile" name="zipfile" accept=".zip" required />
+  <button type="submit">Upload and Extract</button>
+</form>
+
+<h2>Extracted Files</h2>
+<ul id="fileList"></ul>
+
+<p id="error"></p>
+
+<script>
+  document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const fileField = document.getElementById('zipfile');
+    formData.append('zipfile', fileField.files[0]);
+
+    try {
+      const response = await fetch('/files', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const fileList = document.getElementById('fileList');
+      fileList.innerHTML = '';
+
+      data.files.forEach(file => {
+        const li = document.createElement('li');
+        li.textContent = file.filename;
+        const downloadLink = document.createElement('a');
+        downloadLink.href = file.url;
+        downloadLink.textContent = ' Download';
+        downloadLink.download = file.filename;
+        li.appendChild(downloadLink);
+        fileList.appendChild(li);
+      });
+
+      document.getElementById('error').textContent = '';
+    } catch (error) {
+      console.error('Error:', error);
+      document.getElementById('error').textContent = `Error: ${error.message}`;
+    }
+  });
+</script>
+</body>
+</html>
